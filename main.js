@@ -4,7 +4,7 @@ import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 
 const app = document.getElementById("app");
 
-// 씬 생성 및 배경 하늘색
+// 씬 생성 및 기본 배경 (로딩 전 하늘색)
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
@@ -22,6 +22,26 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 app.appendChild(renderer.domElement);
+
+// 배경 이미지(와인바 사진) 적용
+const textureLoader = new THREE.TextureLoader();
+textureLoader.load(
+  "resources/Cozy_wine_bar_with_outdoor_seating_and_string_lights.png",
+  (texture) => {
+    // 색 공간 보정
+    if (texture.colorSpace !== undefined) {
+      texture.colorSpace = THREE.SRGBColorSpace;
+    }
+    // 360 파노라마(equirectangular)로 사용
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    scene.background = texture;
+    console.log("Background texture loaded");
+  },
+  undefined,
+  (error) => {
+    console.error("Failed to load background texture:", error);
+  }
+);
 
 // 조명
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -72,14 +92,15 @@ objLoader.load(
     box2.getSize(size2);
     const maxDim = Math.max(size2.x, size2.y, size2.z);
 
-    const desiredSize = 5;
+    // 모델이 배경 술집 안에서 너무 크게 느껴지지 않도록 약간 더 작게 조정
+    const desiredSize = 3; // 숫자를 줄일수록 모델이 더 작게 보이고 공간이 넓게 느껴짐
     const scale = maxDim > 0 ? desiredSize / maxDim : 1;
     object.scale.set(scale, scale, scale);
 
     scene.add(object);
 
-    // 카메라 재배치
-    const distance = desiredSize * 2.5;
+    // 카메라 재배치 (모델에서 조금 더 떨어진 위치)
+    const distance = desiredSize * 3.5;
     camera.position.set(distance, distance, distance);
     camera.lookAt(0, 0, 0);
 
