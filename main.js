@@ -126,13 +126,18 @@ function changeBackground() {
 // 배경 이미지 탐색 시작
 discoverBackgroundImages();
 
-// 조명
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+// 조명 (밝게 설정)
+const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
 scene.add(ambientLight);
 
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
 dirLight.position.set(5, 10, 7);
 scene.add(dirLight);
+
+// 추가 조명으로 더 밝게
+const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight2.position.set(-5, 5, -7);
+scene.add(dirLight2);
 
 // OrbitControls
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -246,9 +251,21 @@ function setupObject(object, index) {
       if (!child.material) {
         child.material = new THREE.MeshStandardMaterial({
           color: 0xffffff,
-          roughness: 0.6,
+          roughness: 0.4,
           metalness: 0.1,
+          emissive: 0x222222, // 자체 발광으로 밝게
         });
+      } else {
+        // 기존 재질도 밝게 조정
+        if (child.material.color) {
+          child.material.color.multiplyScalar(1.5); // 색상 밝게
+        }
+        if (child.material.emissive) {
+          child.material.emissive.setHex(0x222222); // 자체 발광 추가
+        } else {
+          child.material.emissive = new THREE.Color(0x222222);
+        }
+        child.material.needsUpdate = true;
       }
     }
   });
@@ -391,9 +408,21 @@ function loadSamsungObjects() {
           if (!child.material) {
             child.material = new THREE.MeshStandardMaterial({
               color: 0xffffff,
-              roughness: 0.6,
+              roughness: 0.4,
               metalness: 0.1,
+              emissive: 0x222222, // 자체 발광으로 밝게
             });
+          } else {
+            // 기존 재질도 밝게 조정
+            if (child.material.color) {
+              child.material.color.multiplyScalar(1.5); // 색상 밝게
+            }
+            if (child.material.emissive) {
+              child.material.emissive.setHex(0x222222); // 자체 발광 추가
+            } else {
+              child.material.emissive = new THREE.Color(0x222222);
+            }
+            child.material.needsUpdate = true;
           }
         }
       });
@@ -463,9 +492,21 @@ function loadCarObjects() {
           if (!child.material) {
             child.material = new THREE.MeshStandardMaterial({
               color: 0xffffff,
-              roughness: 0.6,
+              roughness: 0.4,
               metalness: 0.1,
+              emissive: 0x222222, // 자체 발광으로 밝게
             });
+          } else {
+            // 기존 재질도 밝게 조정
+            if (child.material.color) {
+              child.material.color.multiplyScalar(1.5); // 색상 밝게
+            }
+            if (child.material.emissive) {
+              child.material.emissive.setHex(0x222222); // 자체 발광 추가
+            } else {
+              child.material.emissive = new THREE.Color(0x222222);
+            }
+            child.material.needsUpdate = true;
           }
         }
       });
@@ -531,9 +572,21 @@ function loadNvidiaObjects() {
           if (!child.material) {
             child.material = new THREE.MeshStandardMaterial({
               color: 0xffffff,
-              roughness: 0.6,
+              roughness: 0.4,
               metalness: 0.1,
+              emissive: 0x222222, // 자체 발광으로 밝게
             });
+          } else {
+            // 기존 재질도 밝게 조정
+            if (child.material.color) {
+              child.material.color.multiplyScalar(1.5); // 색상 밝게
+            }
+            if (child.material.emissive) {
+              child.material.emissive.setHex(0x222222); // 자체 발광 추가
+            } else {
+              child.material.emissive = new THREE.Color(0x222222);
+            }
+            child.material.needsUpdate = true;
           }
         }
       });
