@@ -70,6 +70,7 @@ const variants = [
   { type: "hat", prompt: "a photo of sks face wearing hat" },
   { type: "beard", prompt: "a photo of sks face wearing beard" },
   { type: "bald", prompt: "a photo of sks face with bald" },
+  { type: "pinkhair", prompt: "a photo of sks face with pink hair" },
 ];
 
 // 아치형 배치 설정
@@ -85,6 +86,74 @@ const objects = Array(faceBaseNames.length)
   .fill(null)
   .map(() => Array(variants.length).fill(null));
 let isInitialLoad = true; // 초기 로드 여부 추적
+
+// 로딩 상태 추적
+let loadingStates = {
+  faces: false,
+  samsung: false,
+  car: false,
+  nvidia: false,
+  beer: false,
+  chickenFries: false,
+  camera: false,
+};
+
+// 로딩 상태 업데이트 함수
+function updateLoadingStatus() {
+  const statusMap = {
+    faces: "Faces",
+    samsung: "Samsung",
+    car: "Car",
+    nvidia: "Nvidia",
+    beer: "Beer",
+    chickenFries: "Food",
+    camera: "Camera",
+  };
+
+  Object.keys(loadingStates).forEach((key) => {
+    const statusElement = document.getElementById(`status-${key}`);
+    if (statusElement) {
+      if (loadingStates[key]) {
+        statusElement.textContent = `${statusMap[key]}: ✓ Loaded`;
+        statusElement.classList.add("loaded");
+      } else {
+        statusElement.textContent = `${statusMap[key]}: Loading...`;
+        statusElement.classList.remove("loaded");
+      }
+    }
+  });
+}
+
+// 로딩 화면 숨기기 함수
+function hideLoadingScreen() {
+  const loadingScreen = document.getElementById("loadingScreen");
+  if (loadingScreen) {
+    loadingScreen.classList.add("hidden");
+    setTimeout(() => {
+      loadingScreen.style.display = "none";
+    }, 500); // transition 시간과 맞춤
+  }
+}
+
+// 모든 로딩이 완료되었는지 확인
+function checkAllLoaded() {
+  updateLoadingStatus();
+  
+  const allLoaded =
+    loadingStates.faces &&
+    loadingStates.samsung &&
+    loadingStates.car &&
+    loadingStates.nvidia &&
+    loadingStates.beer &&
+    loadingStates.chickenFries &&
+    loadingStates.camera;
+
+  if (allLoaded) {
+    setTimeout(() => {
+      hideLoadingScreen();
+    }, 500); // 상태 표시를 잠시 보여준 후 숨김
+  }
+}
 
 // 객체를 배치하는 함수
 function setupObject(object, index) {
@@ -182,7 +251,10 @@ function loadAllFaces() {
               controls.target.set(0, centerObjY, centerObjZ);
               controls.update();
               isInitialLoad = false; // 초기 로드 완료
+              loadingStates.faces = true;
+              loadingStates.camera = true;
               console.log("모든 얼굴 모델 로드 완료!");
+              checkAllLoaded();
             }
           }
         },
@@ -274,11 +346,15 @@ function loadSamsungObjects() {
       object.position.set(leeX, leeY + offsetY, leeZ);
 
       scene.add(object);
+      loadingStates.samsung = true;
+      checkAllLoaded();
       console.log(`Samsung 오브젝트 로드 완료: ${filePath}`);
     },
     undefined,
     (error) => {
       console.error(`Samsung 오브젝트 로드 실패: ${filePath}`, error);
+      loadingStates.samsung = true;
+      checkAllLoaded();
     }
   );
 }
@@ -338,11 +414,15 @@ function loadCarObjects() {
       object.position.set(jeongX, jeongY + offsetY, jeongZ + offsetZ);
 
       scene.add(object);
+      loadingStates.car = true;
+      checkAllLoaded();
       console.log(`Car 오브젝트 로드 완료: ${filePath}`);
     },
     undefined,
     (error) => {
       console.error(`Car 오브젝트 로드 실패: ${filePath}`, error);
+      loadingStates.car = true;
+      checkAllLoaded();
     }
   );
 }
@@ -401,11 +481,15 @@ function loadNvidiaObjects() {
       object.position.set(jensonX, jensonY + offsetY, jensonZ);
 
       scene.add(object);
+      loadingStates.nvidia = true;
+      checkAllLoaded();
       console.log(`Nvidia 오브젝트 로드 완료: ${filePath}`);
     },
     undefined,
     (error) => {
       console.error(`Nvidia 오브젝트 로드 실패: ${filePath}`, error);
+      loadingStates.nvidia = true;
+      checkAllLoaded();
     }
   );
 }
@@ -466,11 +550,20 @@ function loadBeerObjects() {
         object.position.set(faceX, faceY + offsetY, faceZ + offsetZ);
 
         scene.add(object);
+        // 모든 beer 오브젝트가 로드되었는지 확인
+        if (faceIndex === faceBaseNames.length - 1) {
+          loadingStates.beer = true;
+          checkAllLoaded();
+        }
         console.log(`Beer 오브젝트 로드 완료: ${filePath} (faceIndex: ${faceIndex})`);
       },
       undefined,
       (error) => {
         console.error(`Beer 오브젝트 로드 실패: ${filePath}`, error);
+        if (faceIndex === faceBaseNames.length - 1) {
+          loadingStates.beer = true;
+          checkAllLoaded();
+        }
       }
     );
   });
@@ -538,15 +631,27 @@ function loadChickenFriesObjects() {
         object.position.set(x, baseY + yOffset, z);
 
         scene.add(object);
+        // 모든 food 오브젝트가 로드되었는지 확인
+        if (index === foodFiles.length - 1) {
+          loadingStates.chickenFries = true;
+          checkAllLoaded();
+        }
         console.log(`Food 오브젝트 로드 완료: ${filePath}`, { position: { x, y: baseY, z } });
       },
       undefined,
       (error) => {
         console.error(`Food 오브젝트 로드 실패: ${filePath}`, error);
+        if (index === foodFiles.length - 1) {
+          loadingStates.chickenFries = true;
+          checkAllLoaded();
+        }
       }
     );
   });
 }
+
+// 초기 로딩 상태 표시
+updateLoadingStatus();
 
 // 초기 로드
 loadAllFaces();
