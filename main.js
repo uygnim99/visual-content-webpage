@@ -23,33 +23,121 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 app.appendChild(renderer.domElement);
 
+// 배경 이미지 목록 (동적으로 탐색)
+let backgroundImages = [];
+let currentBackgroundIndex = 0;
+
 // 배경 이미지(와인바 사진) 적용
 const textureLoader = new THREE.TextureLoader();
-textureLoader.load(
-  "resources/Cozy_wine_bar_with_outdoor_seating_and_string_lights.png",
-  (texture) => {
-    // 색 공간 보정
-    if (texture.colorSpace !== undefined) {
-      texture.colorSpace = THREE.SRGBColorSpace;
-    }
-    // 360 파노라마(equirectangular)로 사용
-    texture.mapping = THREE.EquirectangularReflectionMapping;
-    scene.background = texture;
-    console.log("Background texture loaded");
-  },
-  undefined,
-  (error) => {
-    console.error("Failed to load background texture:", error);
-  }
-);
 
-// 조명
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+// 배경 폴더에서 모든 PNG 파일을 동적으로 찾는 함수
+async function discoverBackgroundImages() {
+  const backgroundsDir = "resources/backgrounds/";
+  const foundImages = [];
+  
+  // 파일 존재 여부 확인 함수 (Image 객체 사용)
+  function checkImageExists(filePath) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = filePath;
+      // 타임아웃 설정 (1.5초)
+      setTimeout(() => resolve(false), 1500);
+    });
+  }
+  
+  // panorama*.png 패턴 찾기 (*는 숫자만, 자릿수는 동적)
+  // panorama1.png, panorama2.png, ... panorama10.png, panorama11.png 등을 찾음
+  let index = 1;
+  let consecutiveFailures = 0;
+  const maxConsecutiveFailures = 20; // 연속으로 20개를 찾지 못하면 중단
+  
+  while (index <= 10000 && consecutiveFailures < maxConsecutiveFailures) {
+    const fileName = `panorama${index}.png`;
+    const filePath = `${backgroundsDir}${fileName}`;
+    
+    const exists = await checkImageExists(filePath);
+    if (exists) {
+      foundImages.push(filePath);
+      consecutiveFailures = 0;
+    } else {
+      consecutiveFailures++;
+    }
+    
+    index++;
+  }
+  
+  // 파일명으로 정렬 (숫자 순서)
+  foundImages.sort((a, b) => {
+    const numA = parseInt(a.match(/\d+/)?.[0] || "0");
+    const numB = parseInt(b.match(/\d+/)?.[0] || "0");
+    return numA - numB;
+  });
+  
+  backgroundImages = foundImages;
+  console.log(`Found ${backgroundImages.length} PNG background images:`, backgroundImages);
+  
+  // 이미지를 찾았으면 첫 번째 배경 로드
+  if (backgroundImages.length > 0) {
+    loadBackground(0);
+  } else {
+    console.warn("No PNG images found in resources/backgrounds/");
+  }
+}
+
+// 배경 이미지 로드 함수
+function loadBackground(index) {
+  if (backgroundImages.length === 0) {
+    console.warn("No background images available");
+    return;
+  }
+  
+  const imagePath = backgroundImages[index];
+  textureLoader.load(
+    imagePath,
+    (texture) => {
+      // 색 공간 보정
+      if (texture.colorSpace !== undefined) {
+        texture.colorSpace = THREE.SRGBColorSpace;
+      }
+      // 360 파노라마(equirectangular)로 사용
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      scene.background = texture;
+      console.log(`Background texture loaded: ${imagePath}`);
+    },
+    undefined,
+    (error) => {
+      console.error(`Failed to load background texture: ${imagePath}`, error);
+    }
+  );
+}
+
+// 배경 변경 함수
+function changeBackground() {
+  if (backgroundImages.length === 0) {
+    console.warn("No background images available");
+    return;
+  }
+  currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
+  loadBackground(currentBackgroundIndex);
+}
+
+// 배경 이미지 탐색 시작
+discoverBackgroundImages();
+
+// 조명 (밝게 설정)
+const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
 scene.add(ambientLight);
 
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
 dirLight.position.set(5, 10, 7);
 scene.add(dirLight);
+
+// 추가 조명으로 더 밝게
+const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight2.position.set(-5, 5, -7);
+scene.add(dirLight2);
 
 // OrbitControls
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -163,9 +251,21 @@ function setupObject(object, index) {
       if (!child.material) {
         child.material = new THREE.MeshStandardMaterial({
           color: 0xffffff,
-          roughness: 0.6,
+          roughness: 0.4,
           metalness: 0.1,
+          emissive: 0x222222, // 자체 발광으로 밝게
         });
+      } else {
+        // 기존 재질도 밝게 조정
+        if (child.material.color) {
+          child.material.color.multiplyScalar(1.5); // 색상 밝게
+        }
+        if (child.material.emissive) {
+          child.material.emissive.setHex(0x222222); // 자체 발광 추가
+        } else {
+          child.material.emissive = new THREE.Color(0x222222);
+        }
+        child.material.needsUpdate = true;
       }
     }
   });
@@ -308,9 +408,21 @@ function loadSamsungObjects() {
           if (!child.material) {
             child.material = new THREE.MeshStandardMaterial({
               color: 0xffffff,
-              roughness: 0.6,
+              roughness: 0.4,
               metalness: 0.1,
+              emissive: 0x222222, // 자체 발광으로 밝게
             });
+          } else {
+            // 기존 재질도 밝게 조정
+            if (child.material.color) {
+              child.material.color.multiplyScalar(1.5); // 색상 밝게
+            }
+            if (child.material.emissive) {
+              child.material.emissive.setHex(0x222222); // 자체 발광 추가
+            } else {
+              child.material.emissive = new THREE.Color(0x222222);
+            }
+            child.material.needsUpdate = true;
           }
         }
       });
@@ -380,9 +492,21 @@ function loadCarObjects() {
           if (!child.material) {
             child.material = new THREE.MeshStandardMaterial({
               color: 0xffffff,
-              roughness: 0.6,
+              roughness: 0.4,
               metalness: 0.1,
+              emissive: 0x222222, // 자체 발광으로 밝게
             });
+          } else {
+            // 기존 재질도 밝게 조정
+            if (child.material.color) {
+              child.material.color.multiplyScalar(1.5); // 색상 밝게
+            }
+            if (child.material.emissive) {
+              child.material.emissive.setHex(0x222222); // 자체 발광 추가
+            } else {
+              child.material.emissive = new THREE.Color(0x222222);
+            }
+            child.material.needsUpdate = true;
           }
         }
       });
@@ -448,9 +572,21 @@ function loadNvidiaObjects() {
           if (!child.material) {
             child.material = new THREE.MeshStandardMaterial({
               color: 0xffffff,
-              roughness: 0.6,
+              roughness: 0.4,
               metalness: 0.1,
+              emissive: 0x222222, // 자체 발광으로 밝게
             });
+          } else {
+            // 기존 재질도 밝게 조정
+            if (child.material.color) {
+              child.material.color.multiplyScalar(1.5); // 색상 밝게
+            }
+            if (child.material.emissive) {
+              child.material.emissive.setHex(0x222222); // 자체 발광 추가
+            } else {
+              child.material.emissive = new THREE.Color(0x222222);
+            }
+            child.material.needsUpdate = true;
           }
         }
       });
@@ -696,5 +832,382 @@ editButton.addEventListener("click", () => {
 
 // 초기 프롬프트 텍스트 설정
 textBox.textContent = variants[currentVariantIndex].prompt;
+
+// 애니메이션 상태
+let isAnimating = false;
+let originalCameraPosition = new THREE.Vector3();
+let originalTarget = new THREE.Vector3();
+
+// 카메라를 한바퀴 회전시키는 함수
+function rotateCamera360(duration, callback) {
+  const startTime = Date.now();
+  const startPosition = camera.position.clone();
+  const target = controls.target.clone();
+  
+  // 카메라와 타겟 사이의 거리 계산
+  const distance = startPosition.distanceTo(target);
+  
+  // 초기 각도 계산 (spherical coordinates)
+  const direction = new THREE.Vector3().subVectors(startPosition, target).normalize();
+  let azimuth = Math.atan2(direction.x, direction.z);
+  let polar = Math.acos(direction.y);
+  
+  const animate = () => {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // 부드러운 easing
+    const eased = progress < 0.5 
+      ? 2 * progress * progress 
+      : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+    
+    // 360도 회전 (2π)
+    const currentAzimuth = azimuth + eased * Math.PI * 2;
+    
+    // spherical coordinates를 cartesian으로 변환
+    const x = target.x + distance * Math.sin(polar) * Math.sin(currentAzimuth);
+    const y = target.y + distance * Math.cos(polar);
+    const z = target.z + distance * Math.sin(polar) * Math.cos(currentAzimuth);
+    
+    camera.position.set(x, y, z);
+    camera.lookAt(target);
+    controls.target.copy(target);
+    controls.update();
+    
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      if (callback) callback();
+    }
+  };
+  
+  animate();
+}
+
+// 프롬프트 연속 변경 (원점에서)
+function changePromptsSequentially(count, interval, callback) {
+  let index = 0;
+  
+  function changeNext() {
+    if (index < count) {
+      clickEditPrompt();
+      index++;
+      if (index < count) {
+        setTimeout(changeNext, interval);
+      } else {
+        if (callback) callback();
+      }
+    }
+  }
+  
+  changeNext();
+}
+
+// 좌우 빠르게 회전 (-10도 -> 20도 -> -18도 -> 8도)
+function quickLeftRightRotate(duration, callback) {
+  const startTime = Date.now();
+  const startPosition = camera.position.clone();
+  const target = controls.target.clone();
+  
+  // 카메라와 타겟 사이의 거리 계산
+  const distance = startPosition.distanceTo(target);
+  
+  // 초기 각도 계산
+  const direction = new THREE.Vector3().subVectors(startPosition, target).normalize();
+  let startAzimuth = Math.atan2(direction.x, direction.z);
+  let startPolar = Math.acos(direction.y);
+  
+  // 회전 각도 시퀀스 (도 단위)
+  const rotationSequence = [-10, 20, -18, 8];
+  const segmentDuration = duration / rotationSequence.length;
+  
+  const animate = () => {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    if (progress < 1) {
+      // 현재 세그먼트 계산
+      const segmentIndex = Math.min(Math.floor(elapsed / segmentDuration), rotationSequence.length - 1);
+      const segmentProgress = (elapsed % segmentDuration) / segmentDuration;
+      
+      // 현재 세그먼트의 시작과 끝 각도
+      const startAngle = segmentIndex === 0 ? 0 : rotationSequence[segmentIndex - 1];
+      const endAngle = rotationSequence[segmentIndex];
+      
+      // 부드러운 보간
+      const eased = segmentProgress < 0.5 
+        ? 2 * segmentProgress * segmentProgress 
+        : 1 - Math.pow(-2 * segmentProgress + 2, 2) / 2;
+      
+      const currentAngle = startAngle + (endAngle - startAngle) * eased;
+      const azimuthOffset = (currentAngle * Math.PI) / 180;
+      
+      // 각도 계산
+      const currentAzimuth = startAzimuth + azimuthOffset;
+      const currentPolar = startPolar;
+      
+      // spherical coordinates를 cartesian으로 변환
+      const x = target.x + distance * Math.sin(currentPolar) * Math.sin(currentAzimuth);
+      const y = target.y + distance * Math.cos(currentPolar);
+      const z = target.z + distance * Math.sin(currentPolar) * Math.cos(currentAzimuth);
+      
+      camera.position.set(x, y, z);
+      camera.lookAt(target);
+      controls.target.copy(target);
+      controls.update();
+      
+      requestAnimationFrame(animate);
+    } else {
+      // 마지막 각도로 설정
+      const finalAngle = rotationSequence[rotationSequence.length - 1];
+      const azimuthOffset = (finalAngle * Math.PI) / 180;
+      const currentAzimuth = startAzimuth + azimuthOffset;
+      
+      const x = target.x + distance * Math.sin(startPolar) * Math.sin(currentAzimuth);
+      const y = target.y + distance * Math.cos(startPolar);
+      const z = target.z + distance * Math.sin(startPolar) * Math.cos(currentAzimuth);
+      
+      camera.position.set(x, y, z);
+      camera.lookAt(target);
+      controls.target.copy(target);
+      controls.update();
+      
+      if (callback) callback();
+    }
+  };
+  
+  animate();
+}
+
+// 아치를 따라 translate (faces obj 잘 보이게)
+function translateAlongArch(duration, callback) {
+  const startTime = Date.now();
+  const startPosition = camera.position.clone();
+  const startTarget = controls.target.clone();
+  
+  // 아치형 배치 설정 (main.js의 전역 변수와 동일)
+  const archRadius = 6;
+  const archHeight = 2;
+  const archAngles = [-60, -30, 0, 30, 60];
+  
+  // 각 얼굴의 위치 계산
+  const facePositions = archAngles.map((angle) => {
+    const angleRad = (angle * Math.PI) / 180;
+    const x = Math.sin(angleRad) * archRadius;
+    const z = Math.cos(angleRad) * archRadius;
+    const normalizedAngle = Math.abs(angle) / 60;
+    const y = archHeight * (1 - normalizedAngle * 0.5);
+    return new THREE.Vector3(x, y, z);
+  });
+  
+  // 카메라가 각 얼굴을 바라보도록 위치 계산 (원점에서 얼굴 방향으로)
+  const cameraPositions = facePositions.map((facePos) => {
+    // 원점(0, 0, 0)에서 얼굴 방향으로 거리를 두고 배치
+    const direction = new THREE.Vector3().subVectors(facePos, new THREE.Vector3(0, 0, 0)).normalize();
+    const cameraDistance = 8; // 얼굴에서 떨어진 거리
+    return new THREE.Vector3(
+      -direction.x * cameraDistance,
+      facePos.y + 1, // 얼굴보다 약간 위에서
+      -direction.z * cameraDistance
+    );
+  });
+  
+  const segmentDuration = duration / cameraPositions.length;
+  
+  const animate = () => {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    if (progress < 1) {
+      // 현재 세그먼트 계산
+      const segmentIndex = Math.min(Math.floor(elapsed / segmentDuration), cameraPositions.length - 1);
+      const segmentProgress = (elapsed % segmentDuration) / segmentDuration;
+      
+      // 현재 세그먼트의 시작과 끝 위치
+      const startPos = segmentIndex === 0 ? startPosition : cameraPositions[segmentIndex - 1];
+      const endPos = cameraPositions[segmentIndex];
+      
+      // 부드러운 보간
+      const eased = segmentProgress < 0.5 
+        ? 2 * segmentProgress * segmentProgress 
+        : 1 - Math.pow(-2 * segmentProgress + 2, 2) / 2;
+      
+      const currentPos = new THREE.Vector3().lerpVectors(startPos, endPos, eased);
+      
+      // 타겟도 해당 얼굴 위치로 설정
+      const faceIndex = segmentIndex;
+      const currentTarget = facePositions[faceIndex];
+      
+      camera.position.copy(currentPos);
+      camera.lookAt(currentTarget);
+      controls.target.copy(currentTarget);
+      controls.update();
+      
+      requestAnimationFrame(animate);
+    } else {
+      // 마지막 위치로 설정
+      const finalPos = cameraPositions[cameraPositions.length - 1];
+      const finalTarget = facePositions[facePositions.length - 1];
+      
+      camera.position.copy(finalPos);
+      camera.lookAt(finalTarget);
+      controls.target.copy(finalTarget);
+      controls.update();
+      
+      if (callback) callback();
+    }
+  };
+  
+  animate();
+}
+
+// 제자리에서 작게 두바퀴 회전 (드래그로 작은 원을 그리듯, obj 정면이 잘 보이도록)
+function rotateInPlace360x2(duration, callback) {
+  const startTime = Date.now();
+  // 현재 카메라 위치를 정확히 캡처
+  const startPosition = camera.position.clone();
+  const target = controls.target.clone();
+  
+  // 카메라와 타겟 사이의 거리 계산
+  const distance = startPosition.distanceTo(target);
+  
+  // 초기 각도 계산 (spherical coordinates)
+  const direction = new THREE.Vector3().subVectors(startPosition, target).normalize();
+  let startAzimuth = Math.atan2(direction.x, direction.z);
+  let startPolar = Math.acos(direction.y);
+  
+  // 작은 원을 그리기 위한 반지름 (약 5도 정도의 작은 회전)
+  const smallCircleRadius = 5 * Math.PI / 180; // 5도
+  
+  const animate = () => {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // 부드러운 easing
+    const eased = progress < 0.5 
+      ? 2 * progress * progress 
+      : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+    
+    // 두바퀴 회전 (4π) - 작은 원을 그리며
+    const circleAngle = eased * Math.PI * 4;
+    
+    // 작은 원의 경로 (azimuth와 polar를 작게 변화시켜 원형 경로 생성)
+    // 시작 시점(progress=0)에서 오프셋이 0이 되도록 조정
+    const azimuthOffset = Math.sin(circleAngle) * smallCircleRadius;
+    const polarOffset = (Math.cos(circleAngle) - 1) * smallCircleRadius; // 시작 시 0이 되도록
+    
+    // 시작 각도에서 작은 오프셋 추가
+    const currentAzimuth = startAzimuth + azimuthOffset;
+    const currentPolar = Math.max(0.1, Math.min(Math.PI - 0.1, startPolar + polarOffset));
+    
+    // spherical coordinates를 cartesian으로 변환
+    const x = target.x + distance * Math.sin(currentPolar) * Math.sin(currentAzimuth);
+    const y = target.y + distance * Math.cos(currentPolar);
+    const z = target.z + distance * Math.sin(currentPolar) * Math.cos(currentAzimuth);
+    
+    camera.position.set(x, y, z);
+    camera.lookAt(target);
+    controls.target.copy(target);
+    controls.update();
+    
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      // 원래 위치로 복귀
+      camera.position.copy(startPosition);
+      camera.lookAt(target);
+      controls.target.copy(target);
+      controls.update();
+      
+      if (callback) callback();
+    }
+  };
+  
+  animate();
+}
+
+// edit prompt 버튼 클릭 함수 (프로그래밍 방식)
+function clickEditPrompt() {
+  currentVariantIndex = (currentVariantIndex + 1) % variants.length;
+  textBox.textContent = variants[currentVariantIndex].prompt;
+  showVariant(currentVariantIndex);
+}
+
+// 전체 애니메이션 시퀀스 실행
+function playAnimation() {
+  if (isAnimating) return;
+  
+  isAnimating = true;
+  const playButton = document.getElementById("playButton");
+  if (playButton) {
+    playButton.disabled = true;
+    playButton.textContent = "Playing...";
+  }
+  
+  // 프롬프트 텍스트를 제외한 모든 UI 숨기기
+  const overlay = document.querySelector(".overlay");
+  const bottomPanel = document.querySelector(".bottom-panel");
+  const changeBackgroundButton = document.getElementById("changeBackgroundButton");
+  
+  if (overlay) overlay.style.display = "none";
+  if (bottomPanel) bottomPanel.style.display = "none";
+  if (changeBackgroundButton) changeBackgroundButton.style.display = "none";
+  if (playButton) playButton.style.display = "none";
+  
+  // 원래 카메라 위치와 타겟 저장
+  originalCameraPosition.copy(camera.position);
+  originalTarget.copy(controls.target);
+  
+  // OrbitControls 비활성화
+  controls.enabled = false;
+  
+  // 1. 카메라를 한바퀴 회전 (2초)
+  rotateCamera360(2000, () => {
+    // 원점으로 복귀
+    camera.position.copy(originalCameraPosition);
+    controls.target.copy(originalTarget);
+    controls.update();
+    
+    // 2. 10회 prompt 변경 (각 0.4초, 총 4초)
+    changePromptsSequentially(10, 400, () => {
+      // 카메라 위치가 원점에 있는지 확인하고 유지
+      camera.position.copy(originalCameraPosition);
+      controls.target.copy(originalTarget);
+      controls.update();
+      
+      // 다음 프레임에서 회전 시작 (부드러운 전환을 위해)
+      requestAnimationFrame(() => {
+        // 3. 제자리에서 작게 두바퀴 회전 (4초)
+        rotateInPlace360x2(4000, () => {
+          // 애니메이션 완료
+          isAnimating = false;
+          
+          // UI 다시 보이기
+          if (overlay) overlay.style.display = "";
+          if (bottomPanel) bottomPanel.style.display = "";
+          if (changeBackgroundButton) changeBackgroundButton.style.display = "";
+          if (playButton) {
+            playButton.style.display = "";
+            playButton.disabled = false;
+            playButton.textContent = "▶ Play";
+          }
+          controls.enabled = true;
+        });
+      });
+    });
+  });
+}
+
+// Play 버튼 이벤트 리스너
+const playButton = document.getElementById("playButton");
+if (playButton) {
+  playButton.addEventListener("click", playAnimation);
+}
+
+// Change Background 버튼 이벤트 리스너
+const changeBackgroundButton = document.getElementById("changeBackgroundButton");
+if (changeBackgroundButton) {
+  changeBackgroundButton.addEventListener("click", changeBackground);
+}
 
 

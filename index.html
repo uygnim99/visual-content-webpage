@@ -96,6 +96,63 @@
         transform: translateY(0);
       }
 
+      .play-button {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        padding: 12px 24px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #222;
+        font-size: 14px;
+        font-weight: 600;
+        text-align: center;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: background 0.2s, transform 0.1s;
+        z-index: 10;
+      }
+
+      .play-button:hover {
+        background: rgba(255, 255, 255, 1);
+        transform: translateY(-1px);
+      }
+
+      .play-button:active {
+        transform: translateY(0);
+      }
+
+      .play-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .change-background-button {
+        position: fixed;
+        bottom: 70px;
+        left: 20px;
+        padding: 12px 24px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #222;
+        font-size: 14px;
+        font-weight: 600;
+        text-align: center;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: background 0.2s, transform 0.1s;
+        z-index: 10;
+      }
+
+      .change-background-button:hover {
+        background: rgba(255, 255, 255, 1);
+        transform: translateY(-1px);
+      }
+
+      .change-background-button:active {
+        transform: translateY(0);
+      }
+
       .loading-screen {
         position: fixed;
         top: 0;
@@ -177,6 +234,8 @@
     <div class="bottom-panel">
       <button class="edit-prompt">Edit Face with other prompt</button>
     </div>
+    <button class="change-background-button" id="changeBackgroundButton">Change Background</button>
+    <button class="play-button" id="playButton">▶ Play</button>
 
     <!-- importmap: CDN(unpkg)의 ES 모듈 three 사용 (Documents/threejs와 동일 구조) -->
     <script type="importmap">
