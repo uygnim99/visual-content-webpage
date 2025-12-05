@@ -36,11 +36,61 @@
         font-size: 12px;
         z-index: 10;
       }
+
+      .bottom-panel {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        z-index: 10;
+      }
+
+      .text-box {
+        width: 80%;
+        max-width: 600px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #222;
+        font-size: 14px;
+        text-align: center;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+
+      .edit-prompt {
+        padding: 10px 20px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #222;
+        font-size: 12px;
+        text-align: center;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: background 0.2s, transform 0.1s;
+      }
+
+      .edit-prompt:hover {
+        background: rgba(255, 255, 255, 1);
+        transform: translateY(-1px);
+      }
+
+      .edit-prompt:active {
+        transform: translateY(0);
+      }
     </style>
   </head>
   <body>
-    <div class="overlay">Drag to rotate, scroll to zoom</div>
+    <div class="overlay">Drag to rotate! scroll to zoom</div>
     <div id="app"></div>
+    <div class="bottom-panel">
+      <div class="text-box">a photo of sks face</div>
+      <button class="edit-prompt">Edit Face with other prompt</button>
+    </div>
 
     <!-- importmap: CDN(unpkg)의 ES 모듈 three 사용 (Documents/threejs와 동일 구조) -->
     <script type="importmap">
