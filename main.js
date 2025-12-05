@@ -23,25 +23,108 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 app.appendChild(renderer.domElement);
 
+// 배경 이미지 목록 (동적으로 탐색)
+let backgroundImages = [];
+let currentBackgroundIndex = 0;
+
 // 배경 이미지(와인바 사진) 적용
 const textureLoader = new THREE.TextureLoader();
-textureLoader.load(
-  "resources/backgrounds/panorama1.png",
-  (texture) => {
-    // 색 공간 보정
-    if (texture.colorSpace !== undefined) {
-      texture.colorSpace = THREE.SRGBColorSpace;
-    }
-    // 360 파노라마(equirectangular)로 사용
-    texture.mapping = THREE.EquirectangularReflectionMapping;
-    scene.background = texture;
-    console.log("Background texture loaded");
-  },
-  undefined,
-  (error) => {
-    console.error("Failed to load background texture:", error);
+
+// 배경 폴더에서 모든 PNG 파일을 동적으로 찾는 함수
+async function discoverBackgroundImages() {
+  const backgroundsDir = "resources/backgrounds/";
+  const foundImages = [];
+  
+  // 파일 존재 여부 확인 함수 (Image 객체 사용)
+  function checkImageExists(filePath) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = filePath;
+      // 타임아웃 설정 (1.5초)
+      setTimeout(() => resolve(false), 1500);
+    });
   }
-);
+  
+  // panorama*.png 패턴 찾기 (*는 숫자만, 자릿수는 동적)
+  // panorama1.png, panorama2.png, ... panorama10.png, panorama11.png 등을 찾음
+  let index = 1;
+  let consecutiveFailures = 0;
+  const maxConsecutiveFailures = 20; // 연속으로 20개를 찾지 못하면 중단
+  
+  while (index <= 10000 && consecutiveFailures < maxConsecutiveFailures) {
+    const fileName = `panorama${index}.png`;
+    const filePath = `${backgroundsDir}${fileName}`;
+    
+    const exists = await checkImageExists(filePath);
+    if (exists) {
+      foundImages.push(filePath);
+      consecutiveFailures = 0;
+    } else {
+      consecutiveFailures++;
+    }
+    
+    index++;
+  }
+  
+  // 파일명으로 정렬 (숫자 순서)
+  foundImages.sort((a, b) => {
+    const numA = parseInt(a.match(/\d+/)?.[0] || "0");
+    const numB = parseInt(b.match(/\d+/)?.[0] || "0");
+    return numA - numB;
+  });
+  
+  backgroundImages = foundImages;
+  console.log(`Found ${backgroundImages.length} PNG background images:`, backgroundImages);
+  
+  // 이미지를 찾았으면 첫 번째 배경 로드
+  if (backgroundImages.length > 0) {
+    loadBackground(0);
+  } else {
+    console.warn("No PNG images found in resources/backgrounds/");
+  }
+}
+
+// 배경 이미지 로드 함수
+function loadBackground(index) {
+  if (backgroundImages.length === 0) {
+    console.warn("No background images available");
+    return;
+  }
+  
+  const imagePath = backgroundImages[index];
+  textureLoader.load(
+    imagePath,
+    (texture) => {
+      // 색 공간 보정
+      if (texture.colorSpace !== undefined) {
+        texture.colorSpace = THREE.SRGBColorSpace;
+      }
+      // 360 파노라마(equirectangular)로 사용
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      scene.background = texture;
+      console.log(`Background texture loaded: ${imagePath}`);
+    },
+    undefined,
+    (error) => {
+      console.error(`Failed to load background texture: ${imagePath}`, error);
+    }
+  );
+}
+
+// 배경 변경 함수
+function changeBackground() {
+  if (backgroundImages.length === 0) {
+    console.warn("No background images available");
+    return;
+  }
+  currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
+  loadBackground(currentBackgroundIndex);
+}
+
+// 배경 이미지 탐색 시작
+discoverBackgroundImages();
 
 // 조명
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -1008,6 +1091,16 @@ function playAnimation() {
     playButton.textContent = "Playing...";
   }
   
+  // 프롬프트 텍스트를 제외한 모든 UI 숨기기
+  const overlay = document.querySelector(".overlay");
+  const bottomPanel = document.querySelector(".bottom-panel");
+  const changeBackgroundButton = document.getElementById("changeBackgroundButton");
+  
+  if (overlay) overlay.style.display = "none";
+  if (bottomPanel) bottomPanel.style.display = "none";
+  if (changeBackgroundButton) changeBackgroundButton.style.display = "none";
+  if (playButton) playButton.style.display = "none";
+  
   // 원래 카메라 위치와 타겟 저장
   originalCameraPosition.copy(camera.position);
   originalTarget.copy(controls.target);
@@ -1035,7 +1128,13 @@ function playAnimation() {
         rotateInPlace360x2(4000, () => {
           // 애니메이션 완료
           isAnimating = false;
+          
+          // UI 다시 보이기
+          if (overlay) overlay.style.display = "";
+          if (bottomPanel) bottomPanel.style.display = "";
+          if (changeBackgroundButton) changeBackgroundButton.style.display = "";
           if (playButton) {
+            playButton.style.display = "";
             playButton.disabled = false;
             playButton.textContent = "▶ Play";
           }
@@ -1050,6 +1149,12 @@ function playAnimation() {
 const playButton = document.getElementById("playButton");
 if (playButton) {
   playButton.addEventListener("click", playAnimation);
+}
+
+// Change Background 버튼 이벤트 리스너
+const changeBackgroundButton = document.getElementById("changeBackgroundButton");
+if (changeBackgroundButton) {
+  changeBackgroundButton.addEventListener("click", changeBackground);
 }
 
 
