@@ -215,8 +215,346 @@ function showVariant(variantIndex) {
   });
 }
 
+// samsung_02.obj를 lee 얼굴 머리 위에 배치
+function loadSamsungObjects() {
+  const leeIndex = 1; // lee는 faceBaseNames[1]
+  const filePath = "resources/objects/samsung_00.obj";
+
+  // lee 얼굴의 위치 계산
+  const leeAngle = (angles[leeIndex] * Math.PI) / 180;
+  const leeX = Math.sin(leeAngle) * radius;
+  const leeZ = Math.cos(leeAngle) * radius;
+  const normalizedLeeAngle = Math.abs(angles[leeIndex]) / 60;
+  const leeY = archHeight * (1 - normalizedLeeAngle * 0.5);
+
+  objLoader.load(
+    filePath,
+    (object) => {
+      // 기본 재질 및 설정
+      object.traverse((child) => {
+        if (child.isMesh) {
+          if (!child.material) {
+            child.material = new THREE.MeshStandardMaterial({
+              color: 0xffffff,
+              roughness: 0.6,
+              metalness: 0.1,
+            });
+          }
+        }
+      });
+
+      // 크기/위치 자동 정규화
+      const box = new THREE.Box3().setFromObject(object);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
+
+      object.position.x -= center.x;
+      object.position.y -= center.y;
+      object.position.z -= center.z;
+
+      const box2 = new THREE.Box3().setFromObject(object);
+      const size2 = new THREE.Vector3();
+      box2.getSize(size2);
+      const maxDim = Math.max(size2.x, size2.y, size2.z);
+
+      // 오브젝트 크기 조정
+      const desiredSize = 1.5;
+      const scale = maxDim > 0 ? desiredSize / maxDim : 1;
+      object.scale.set(scale, scale, scale);
+
+      // 회전
+      object.rotateY(-Math.PI/3);
+      object.rotateZ(Math.PI/3);
+      object.rotateX(-Math.PI/3);
+
+      // lee 얼굴 머리 위에 배치
+      const offsetY = 2.5; // 머리 위 높이
+      object.position.set(leeX, leeY + offsetY, leeZ);
+
+      scene.add(object);
+      console.log(`Samsung 오브젝트 로드 완료: ${filePath}`);
+    },
+    undefined,
+    (error) => {
+      console.error(`Samsung 오브젝트 로드 실패: ${filePath}`, error);
+    }
+  );
+}
+
+// car_01.obj를 jeong 얼굴 머리 위에 배치
+function loadCarObjects() {
+  const jeongIndex = 2; // jeong은 faceBaseNames[2]
+  const filePath = "resources/objects/car_01.obj";
+
+  // jeong 얼굴의 위치 계산
+  const jeongAngle = (angles[jeongIndex] * Math.PI) / 180;
+  const jeongX = Math.sin(jeongAngle) * radius;
+  const jeongZ = Math.cos(jeongAngle) * radius;
+  const normalizedJeongAngle = Math.abs(angles[jeongIndex]) / 60;
+  const jeongY = archHeight * (1 - normalizedJeongAngle * 0.5);
+
+  objLoader.load(
+    filePath,
+    (object) => {
+      // 기본 재질 및 설정
+      object.traverse((child) => {
+        if (child.isMesh) {
+          if (!child.material) {
+            child.material = new THREE.MeshStandardMaterial({
+              color: 0xffffff,
+              roughness: 0.6,
+              metalness: 0.1,
+            });
+          }
+        }
+      });
+
+      // 크기/위치 자동 정규화
+      const box = new THREE.Box3().setFromObject(object);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
+
+      object.position.x -= center.x;
+      object.position.y -= center.y;
+      object.position.z -= center.z;
+
+      const box2 = new THREE.Box3().setFromObject(object);
+      const size2 = new THREE.Vector3();
+      box2.getSize(size2);
+      const maxDim = Math.max(size2.x, size2.y, size2.z);
+
+      // 오브젝트 크기 조정
+      const desiredSize = 1.5;
+      const scale = maxDim > 0 ? desiredSize / maxDim : 1;
+      object.scale.set(scale, scale, scale);
+
+      // jeong 얼굴 머리 위에 배치
+      const offsetY = 2.0; // 머리 위 높이
+      const offsetZ = -0.5
+      object.position.set(jeongX, jeongY + offsetY, jeongZ + offsetZ);
+
+      scene.add(object);
+      console.log(`Car 오브젝트 로드 완료: ${filePath}`);
+    },
+    undefined,
+    (error) => {
+      console.error(`Car 오브젝트 로드 실패: ${filePath}`, error);
+    }
+  );
+}
+
+// nvidia_00.obj를 jenson 얼굴 머리 위에 배치
+function loadNvidiaObjects() {
+  const jensonIndex = 3; // jenson은 faceBaseNames[3]
+  const filePath = "resources/objects/nvidia_00.obj";
+
+  // jenson 얼굴의 위치 계산
+  const jensonAngle = (angles[jensonIndex] * Math.PI) / 180;
+  const jensonX = Math.sin(jensonAngle) * radius;
+  const jensonZ = Math.cos(jensonAngle) * radius;
+  const normalizedJensonAngle = Math.abs(angles[jensonIndex]) / 60;
+  const jensonY = archHeight * (1 - normalizedJensonAngle * 0.5);
+
+  objLoader.load(
+    filePath,
+    (object) => {
+      // 기본 재질 및 설정
+      object.traverse((child) => {
+        if (child.isMesh) {
+          if (!child.material) {
+            child.material = new THREE.MeshStandardMaterial({
+              color: 0xffffff,
+              roughness: 0.6,
+              metalness: 0.1,
+            });
+          }
+        }
+      });
+
+      // 크기/위치 자동 정규화
+      const box = new THREE.Box3().setFromObject(object);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
+
+      object.position.x -= center.x;
+      object.position.y -= center.y;
+      object.position.z -= center.z;
+
+      const box2 = new THREE.Box3().setFromObject(object);
+      const size2 = new THREE.Vector3();
+      box2.getSize(size2);
+      const maxDim = Math.max(size2.x, size2.y, size2.z);
+
+      // 오브젝트 크기 조정
+      const desiredSize = 1.5;
+      const scale = maxDim > 0 ? desiredSize / maxDim : 1;
+      object.scale.set(scale, scale, scale);
+
+      // jenson 얼굴 머리 위에 배치
+      const offsetY = 2.0; // 머리 위 높이
+      object.position.set(jensonX, jensonY + offsetY, jensonZ);
+
+      scene.add(object);
+      console.log(`Nvidia 오브젝트 로드 완료: ${filePath}`);
+    },
+    undefined,
+    (error) => {
+      console.error(`Nvidia 오브젝트 로드 실패: ${filePath}`, error);
+    }
+  );
+}
+
+// beer_01.obj를 5개 각 인물의 중심점에서 z축으로 -3만큼 offset하여 배치
+function loadBeerObjects() {
+  const filePath = "resources/objects/beer_01.obj";
+
+  // 5명의 인물 각각에 대해 배치
+  faceBaseNames.forEach((_, faceIndex) => {
+    // 얼굴 위치 계산
+    const faceAngle = (angles[faceIndex] * Math.PI) / 180;
+    const faceX = Math.sin(faceAngle) * radius;
+    const faceZ = Math.cos(faceAngle) * radius;
+    const normalizedFaceAngle = Math.abs(angles[faceIndex]) / 60;
+    const faceY = archHeight * (1 - normalizedFaceAngle * 0.5);
+
+    objLoader.load(
+      filePath,
+      (object) => {
+        // 기본 재질 및 설정
+        object.traverse((child) => {
+          if (child.isMesh) {
+            if (!child.material) {
+              child.material = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.6,
+                metalness: 0.1,
+              });
+            }
+          }
+        });
+
+        // 크기/위치 자동 정규화
+        const box = new THREE.Box3().setFromObject(object);
+        const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
+        box.getSize(size);
+        box.getCenter(center);
+
+        object.position.x -= center.x;
+        object.position.y -= center.y;
+        object.position.z -= center.z;
+
+        const box2 = new THREE.Box3().setFromObject(object);
+        const size2 = new THREE.Vector3();
+        box2.getSize(size2);
+        const maxDim = Math.max(size2.x, size2.y, size2.z);
+
+        // 오브젝트 크기 조정
+        const desiredSize = 0.8;
+        const scale = maxDim > 0 ? desiredSize / maxDim : 1;
+        object.scale.set(scale, scale, scale);
+
+        // 각 얼굴의 중심점에서 z축으로 -3만큼 offset하여 배치
+        const offsetZ = -1;
+        const offsetY = -1
+        object.position.set(faceX, faceY + offsetY, faceZ + offsetZ);
+
+        scene.add(object);
+        console.log(`Beer 오브젝트 로드 완료: ${filePath} (faceIndex: ${faceIndex})`);
+      },
+      undefined,
+      (error) => {
+        console.error(`Beer 오브젝트 로드 실패: ${filePath}`, error);
+      }
+    );
+  });
+}
+
+// chicken, fries 오브젝트들을 카메라 앞에 원형으로 배치
+function loadChickenFriesObjects() {
+  const foodFiles = [
+    "chicken_00.obj", "chicken_01.obj", "chicken_02.obj",
+    "fries_00.obj", "fries_01.obj", "fries_02.obj",
+  ];
+
+  const totalObjects = foodFiles.length;
+  const circleRadius = 3.5; // 원형 배치 반지름 (간격 넓힘)
+  const baseZ = 3; // 카메라 앞쪽 z 위치 (1만큼 앞으로)
+  const baseY = 0; // y축 동일하게
+
+  foodFiles.forEach((fileName, index) => {
+    const filePath = `resources/objects/${fileName}`;
+
+    // 원형 배치 각도 계산
+    const angle = (index / totalObjects) * Math.PI * 2;
+    const x = Math.cos(angle) * circleRadius;
+    const z = baseZ + Math.sin(angle) * circleRadius * 0.3; // 약간의 z축 변화
+
+    objLoader.load(
+      filePath,
+      (object) => {
+        // 기본 재질 및 설정
+        object.traverse((child) => {
+          if (child.isMesh) {
+            if (!child.material) {
+              child.material = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.6,
+                metalness: 0.1,
+              });
+            }
+          }
+        });
+
+        // 크기/위치 자동 정규화
+        const box = new THREE.Box3().setFromObject(object);
+        const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
+        box.getSize(size);
+        box.getCenter(center);
+
+        object.position.x -= center.x;
+        object.position.y -= center.y;
+        object.position.z -= center.z;
+
+        const box2 = new THREE.Box3().setFromObject(object);
+        const size2 = new THREE.Vector3();
+        box2.getSize(size2);
+        const maxDim = Math.max(size2.x, size2.y, size2.z);
+
+        // 오브젝트 크기 조정 (1.5배)
+        const desiredSize = 1.1;
+        const scale = maxDim > 0 ? desiredSize / maxDim : 1;
+        object.scale.set(scale, scale, scale);
+
+        // 카메라 앞에 원형으로 배치 (2개만 y축 -0.5 낮춤)
+        const yOffset = (index === 4 || index === 5) ? -0.5 : 0;
+        object.position.set(x, baseY + yOffset, z);
+
+        scene.add(object);
+        console.log(`Food 오브젝트 로드 완료: ${filePath}`, { position: { x, y: baseY, z } });
+      },
+      undefined,
+      (error) => {
+        console.error(`Food 오브젝트 로드 실패: ${filePath}`, error);
+      }
+    );
+  });
+}
+
 // 초기 로드
 loadAllFaces();
+loadSamsungObjects();
+loadCarObjects();
+loadNvidiaObjects();
+loadBeerObjects();
+loadChickenFriesObjects();
 
 // 리사이즈
 window.addEventListener("resize", () => {
