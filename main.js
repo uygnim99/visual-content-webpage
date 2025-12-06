@@ -229,9 +229,9 @@ function checkAllLoaded() {
   
   const allLoaded =
     loadingStates.faces &&
-    loadingStates.samsung &&
-    loadingStates.car &&
-    loadingStates.nvidia &&
+    // loadingStates.samsung &&
+    // loadingStates.car &&
+    // loadingStates.nvidia &&
     loadingStates.beer &&
     loadingStates.chickenFries &&
     loadingStates.camera;
