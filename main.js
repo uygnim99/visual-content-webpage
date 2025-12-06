@@ -1133,6 +1133,71 @@ function clickEditPrompt() {
   showVariant(currentVariantIndex);
 }
 
+// // 전체 애니메이션 시퀀스 실행
+// function playAnimation() {
+//   if (isAnimating) return;
+  
+//   isAnimating = true;
+//   const playButton = document.getElementById("playButton");
+//   if (playButton) {
+//     playButton.disabled = true;
+//     playButton.textContent = "Playing...";
+//   }
+  
+//   // 프롬프트 텍스트를 제외한 모든 UI 숨기기
+//   const overlay = document.querySelector(".overlay");
+//   const bottomPanel = document.querySelector(".bottom-panel");
+//   const changeBackgroundButton = document.getElementById("changeBackgroundButton");
+  
+//   if (overlay) overlay.style.display = "none";
+//   if (bottomPanel) bottomPanel.style.display = "none";
+//   if (changeBackgroundButton) changeBackgroundButton.style.display = "none";
+//   if (playButton) playButton.style.display = "none";
+  
+//   // 원래 카메라 위치와 타겟 저장
+//   originalCameraPosition.copy(camera.position);
+//   originalTarget.copy(controls.target);
+  
+//   // OrbitControls 비활성화
+//   controls.enabled = false;
+  
+//   // 1. 카메라를 한바퀴 회전 (2초)
+//   rotateCamera360(2000, () => {
+//     // 원점으로 복귀
+//     camera.position.copy(originalCameraPosition);
+//     controls.target.copy(originalTarget);
+//     controls.update();
+    
+//     // 2. 10회 prompt 변경 (각 0.4초, 총 4초)
+//     changePromptsSequentially(10, 400, () => {
+//       // 카메라 위치가 원점에 있는지 확인하고 유지
+//       camera.position.copy(originalCameraPosition);
+//       controls.target.copy(originalTarget);
+//       controls.update();
+      
+//       // 다음 프레임에서 회전 시작 (부드러운 전환을 위해)
+//       requestAnimationFrame(() => {
+//         // 3. 제자리에서 작게 두바퀴 회전 (4초)
+//         rotateInPlace360x2(4000, () => {
+//           // 애니메이션 완료
+//           isAnimating = false;
+          
+//           // UI 다시 보이기
+//           if (overlay) overlay.style.display = "";
+//           if (bottomPanel) bottomPanel.style.display = "";
+//           if (changeBackgroundButton) changeBackgroundButton.style.display = "";
+//           if (playButton) {
+//             playButton.style.display = "";
+//             playButton.disabled = false;
+//             playButton.textContent = "▶ Play";
+//           }
+//           controls.enabled = true;
+//         });
+//       });
+//     });
+//   });
+// }
+
 // 전체 애니메이션 시퀀스 실행
 function playAnimation() {
   if (isAnimating) return;
@@ -1144,7 +1209,7 @@ function playAnimation() {
     playButton.textContent = "Playing...";
   }
   
-  // 프롬프트 텍스트를 제외한 모든 UI 숨기기
+  // UI 숨기기 로직
   const overlay = document.querySelector(".overlay");
   const bottomPanel = document.querySelector(".bottom-panel");
   const changeBackgroundButton = document.getElementById("changeBackgroundButton");
@@ -1161,42 +1226,82 @@ function playAnimation() {
   // OrbitControls 비활성화
   controls.enabled = false;
   
-  // 1. 카메라를 한바퀴 회전 (2초)
-  rotateCamera360(2000, () => {
+  // ---------------------------------------------------------
+  // [변경 1] 카메라 한바퀴 회전 속도 조절 (2초 -> 5초로 천천히)
+  // ---------------------------------------------------------
+  rotateCamera360(5000, () => {
     // 원점으로 복귀
     camera.position.copy(originalCameraPosition);
     controls.target.copy(originalTarget);
     controls.update();
     
-    // 2. 10회 prompt 변경 (각 0.4초, 총 4초)
-    changePromptsSequentially(10, 400, () => {
-      // 카메라 위치가 원점에 있는지 확인하고 유지
+    // ---------------------------------------------------------
+    // [변경 2] 프롬프트 변경 횟수 축소 (10회 -> 6회)
+    // ---------------------------------------------------------
+    changePromptsSequentially(6, 400, () => {
+      // 카메라 위치 재확인
       camera.position.copy(originalCameraPosition);
       controls.target.copy(originalTarget);
       controls.update();
       
-      // 다음 프레임에서 회전 시작 (부드러운 전환을 위해)
       requestAnimationFrame(() => {
-        // 3. 제자리에서 작게 두바퀴 회전 (4초)
-        rotateInPlace360x2(4000, () => {
-          // 애니메이션 완료
-          isAnimating = false;
-          
-          // UI 다시 보이기
-          if (overlay) overlay.style.display = "";
-          if (bottomPanel) bottomPanel.style.display = "";
-          if (changeBackgroundButton) changeBackgroundButton.style.display = "";
-          if (playButton) {
-            playButton.style.display = "";
-            playButton.disabled = false;
-            playButton.textContent = "▶ Play";
-          }
-          controls.enabled = true;
+        // ---------------------------------------------------------
+        // [변경 3] 제자리 회전 + 프롬프트 변경 세트 (6번 반복)
+        // ---------------------------------------------------------
+        runRotateAndPromptLoop(6, () => {
+          // 모든 애니메이션 완료 후 처리
+          finishAnimationSequence();
         });
       });
     });
   });
+
+  // 애니메이션 종료 및 UI 복구 헬퍼 함수
+  function finishAnimationSequence() {
+    isAnimating = false;
+    
+    if (overlay) overlay.style.display = "";
+    if (bottomPanel) bottomPanel.style.display = "";
+    if (changeBackgroundButton) changeBackgroundButton.style.display = "";
+    if (playButton) {
+      playButton.style.display = "";
+      playButton.disabled = false;
+      playButton.textContent = "▶ Play";
+    }
+    controls.enabled = true;
+  }
+
+  // [새로 추가된 함수] 회전과 프롬프트 변경을 세트로 반복하는 재귀 함수
+  function runRotateAndPromptLoop(count, onComplete) {
+    if (count <= 0) {
+      onComplete();
+      return;
+    }
+
+    // 1. 프롬프트 1회 변경 (즉시 실행)
+    // changePromptsSequentially(1, ...)을 사용하여 1번만 변경
+    // 두 번째 인자(delay)는 0 혹은 짧게 설정하여 회전과 동시에 바뀌도록 함
+    changePromptsSequentially(1, 100, () => {});
+
+    // 2. 제자리 회전 (1회)
+    // 주의: rotateInPlace 함수가 정의되어 있어야 합니다. 
+    // (기존 rotateInPlace360x2가 있다면, 1회만 도는 rotateInPlace(duration, callback) 함수를 사용하세요)
+    // 여기서는 1회 회전에 2초(2000ms)를 할당했습니다.
+    rotateInPlace360x2(5000, () => {
+      // 회전이 끝나면 재귀 호출 (남은 횟수 1 감소)
+      runRotateAndPromptLoop(count - 1, onComplete);
+    });
+  }
 }
+
+// 참고: rotateInPlace 함수가 없다면 기존 회전 로직을 활용해 아래와 같이 간단히 추가해주셔야 합니다.
+/*
+function rotateInPlace(duration, callback) {
+  // 제자리에서 360도 회전하는 로직 구현
+  // ... (기존 rotateInPlace360x2 로직 참조하여 1회전으로 수정)
+  // 완료 시 callback();
+}
+*/
 
 // Play 버튼 이벤트 리스너
 const playButton = document.getElementById("playButton");
