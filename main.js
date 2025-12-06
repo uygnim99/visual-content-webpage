@@ -153,12 +153,12 @@ const faceBaseNames = ["mg", "lee", "jeong", "jenson", "dh"];
 
 // 변형 타입과 프롬프트 매핑
 const variants = [
-  { type: "orig", prompt: "a photo of sks face" },
-  { type: "sunglass", prompt: "a photo of sks face wearing sunglass" },
-  { type: "hat", prompt: "a photo of sks face wearing hat" },
-  { type: "beard", prompt: "a photo of sks face wearing beard" },
-  { type: "bald", prompt: "a photo of sks face with bald" },
-  { type: "pinkhair", prompt: "a photo of sks face with pink hair" },
+  { type: "orig", prompt: "a photo of face" },
+  { type: "sunglass", prompt: "a photo of face wearing sunglass" },
+  { type: "hat", prompt: "a photo of face wearing hat" },
+  { type: "beard", prompt: "a photo of face with bushy beard" },
+  { type: "bald", prompt: "a photo of face with bald head" },
+  { type: "pinkhair", prompt: "a photo of face with pink hair" },
 ];
 
 // 아치형 배치 설정
@@ -791,9 +791,9 @@ updateLoadingStatus();
 
 // 초기 로드
 loadAllFaces();
-loadSamsungObjects();
-loadCarObjects();
-loadNvidiaObjects();
+// loadSamsungObjects();
+// loadCarObjects();
+// loadNvidiaObjects();
 loadBeerObjects();
 loadChickenFriesObjects();
 
@@ -1238,7 +1238,7 @@ function playAnimation() {
     // ---------------------------------------------------------
     // [변경 2] 프롬프트 변경 횟수 축소 (10회 -> 6회)
     // ---------------------------------------------------------
-    changePromptsSequentially(6, 400, () => {
+    changePromptsSequentially(6, 1000, () => {
       // 카메라 위치 재확인
       camera.position.copy(originalCameraPosition);
       controls.target.copy(originalTarget);
