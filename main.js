@@ -1281,13 +1281,13 @@ function playAnimation() {
     // 1. 프롬프트 1회 변경 (즉시 실행)
     // changePromptsSequentially(1, ...)을 사용하여 1번만 변경
     // 두 번째 인자(delay)는 0 혹은 짧게 설정하여 회전과 동시에 바뀌도록 함
-    changePromptsSequentially(1, 100, () => {});
+    changePromptsSequentially(1, 500, () => {});
 
     // 2. 제자리 회전 (1회)
     // 주의: rotateInPlace 함수가 정의되어 있어야 합니다. 
     // (기존 rotateInPlace360x2가 있다면, 1회만 도는 rotateInPlace(duration, callback) 함수를 사용하세요)
     // 여기서는 1회 회전에 2초(2000ms)를 할당했습니다.
-    rotateInPlace360x2(5000, () => {
+    rotateInPlace360x2(6000, () => {
       // 회전이 끝나면 재귀 호출 (남은 횟수 1 감소)
       runRotateAndPromptLoop(count - 1, onComplete);
     });
